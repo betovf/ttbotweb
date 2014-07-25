@@ -3,10 +3,12 @@ package com.vfa.ttbot.web;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.vaadin.addon.charts.Chart;
 import com.vaadin.addon.charts.model.AxisType;
@@ -19,13 +21,17 @@ import com.vaadin.addon.charts.model.XAxis;
 import com.vaadin.addon.charts.model.YAxis;
 import com.vaadin.annotations.Theme;
 import com.vaadin.data.Validator;
+import com.vaadin.data.util.BeanItemContainer;
 import com.vaadin.data.validator.DateRangeValidator;
+import com.vaadin.server.Page;
 import com.vaadin.server.VaadinRequest;
 import com.vaadin.shared.ui.datefield.Resolution;
+import com.vaadin.ui.AbstractSelect.ItemCaptionMode;
 import com.vaadin.ui.Alignment;
 import com.vaadin.ui.Button;
 import com.vaadin.ui.Button.ClickEvent;
 import com.vaadin.ui.HorizontalLayout;
+import com.vaadin.ui.ListSelect;
 import com.vaadin.ui.PopupDateField;
 import com.vaadin.ui.UI;
 import com.vaadin.ui.VerticalLayout;
@@ -50,9 +56,14 @@ public class TTBotWebUI extends UI {
 	private Chart chart;
 	private PopupDateField iniDateField;
 	private PopupDateField endDateField;
+	private ListSelect selectTrends;
+	private List<Trend> filteredTrends = new ArrayList<Trend>();
 	
 	@Override
 	protected void init(VaadinRequest request) {
+		// Page title
+		Page.getCurrent().setTitle("TTBot.es");
+
 		// Main layout
 		final VerticalLayout layout = new VerticalLayout();
 		layout.setMargin(true);
@@ -117,6 +128,14 @@ public class TTBotWebUI extends UI {
 		});
 		endDateField.setImmediate(true);
 		
+		// Select field for filtering trends
+		selectTrends = new ListSelect("Seleccionar TTs");
+		selectTrends.setMultiSelect(true);
+		BeanItemContainer<Trend> trendContainer = new BeanItemContainer<Trend>(Trend.class, trends);
+		selectTrends.setContainerDataSource(trendContainer);
+		selectTrends.setItemCaptionMode(ItemCaptionMode.PROPERTY);
+	    selectTrends.setItemCaptionPropertyId("name");
+		
 		Button button = new Button("Enviar");
 		button.addClickListener(new Button.ClickListener() {
 		    public void buttonClick(ClickEvent event) {
@@ -129,18 +148,36 @@ public class TTBotWebUI extends UI {
 		
 		formLayout.addComponent(iniDateField);
 		formLayout.addComponent(endDateField);
+		formLayout.addComponent(selectTrends);
 		formLayout.addComponent(button);
 		formLayout.setComponentAlignment(button, Alignment.BOTTOM_CENTER);
 		
 	}
 
 	protected void refreshChart() {
+		// Check if dates changed
+		boolean unchanged = this.iniDate.equals(this.iniDateField.getValue()) && this.endDate.equals(this.endDateField.getValue());
+		
 		// Get new dates 
 		this.iniDate = this.iniDateField.getValue();
 		this.endDate = this.endDateField.getValue();
 		
+		// Get possible trends filtered
+		@SuppressWarnings("unchecked")
+		Set<Trend> selected = (Set<Trend>) this.selectTrends.getValue();
+		filteredTrends.clear();
+		if (!selected.isEmpty()) {
+			filteredTrends.addAll(selected);
+		}
+		 
+		if (!unchanged) {
+			// Retrieve data
+			this.loadData();
+			
+			BeanItemContainer<Trend> trendContainer = new BeanItemContainer<Trend>(Trend.class, trends);
+			selectTrends.setContainerDataSource(trendContainer);
+		}
 		// Reload data in chart
-		this.loadData();		
 		this.populateChart();
 		
 		this.chart.drawChart();
@@ -176,6 +213,13 @@ public class TTBotWebUI extends UI {
 			
 			// Get trends names from id-trend list from previous map
 			this.trends = ModelHelper.getTrends(dataService, new ArrayList<Integer>(mapTrends.keySet()));
+			Collections.sort(this.trends, new Comparator<Trend>() {
+				@Override
+				public int compare(Trend arg0, Trend arg1) {
+					// Compare names
+					return arg0.getName().compareToIgnoreCase(arg1.getName());
+				}				
+			});
 			
 		} catch (Exception ex) {
 			ex.printStackTrace();
@@ -186,8 +230,16 @@ public class TTBotWebUI extends UI {
 		// New series
 		List<Series> newSeries = new ArrayList<Series>();
 		
+		// All trends by default
+		List<Trend> targetTrends = this.trends;
+		
+		// Check if filtered
+		if (!this.filteredTrends.isEmpty()) {
+			targetTrends = this.filteredTrends;
+		}
+		
 		// Configure series according to data
-		for (Trend trend : this.trends) {
+		for (Trend trend : targetTrends) {
 			// Each trend will be a series
 			DataSeries series = new DataSeries(trend.getName());
 			
