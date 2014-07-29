@@ -1,14 +1,15 @@
 package com.vfa.ttbot.web;
 
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 
 import com.vaadin.addon.charts.Chart;
 import com.vaadin.addon.charts.model.AxisType;
@@ -22,7 +23,6 @@ import com.vaadin.addon.charts.model.YAxis;
 import com.vaadin.annotations.Theme;
 import com.vaadin.data.Validator;
 import com.vaadin.data.util.BeanItemContainer;
-import com.vaadin.data.validator.DateRangeValidator;
 import com.vaadin.server.Page;
 import com.vaadin.server.VaadinRequest;
 import com.vaadin.shared.ui.datefield.Resolution;
@@ -111,7 +111,15 @@ public class TTBotWebUI extends UI {
 		iniDateField.setResolution(Resolution.MINUTE);
 		iniDateField.setRequired(true);
 		iniDateField.setRequiredError("Debe especificar la fecha de inicio");
-		iniDateField.addValidator(new DateRangeValidator("Fecha de inicio fuera de rango: no puede ser anterior a 24 horas ni posterior a la hora actual", this.minDate, this.endDate, Resolution.MINUTE));
+		iniDateField.addValidator(new Validator() {
+			@Override
+			public void validate(Object value) throws InvalidValueException {
+				// Check against min date
+				if (!(value instanceof Date && ((Date)value).after(minDate))) {
+					throw new InvalidValueException("Fecha de inicio fuera de rango: no puede ser anterior a 24 horas ni posterior a la hora actual");
+				}
+			}			
+		});
 		iniDateField.setImmediate(true);
 		endDateField = new PopupDateField("Fecha-hora de fin", this.endDate);
 		endDateField.setResolution(Resolution.MINUTE);
@@ -184,16 +192,14 @@ public class TTBotWebUI extends UI {
 	}
 
 	private void initDates() {
-		
-		this.endDate = new Date();
-		GregorianCalendar calendar = new GregorianCalendar();
-		calendar.setTime(endDate);
-		calendar.add(Calendar.HOUR_OF_DAY, -2);
-		this.iniDate = calendar.getTime();
+		// Work with Madrid local time
+		DateTime dt = new DateTime();
+		DateTime dtMadrid = dt.withZone(DateTimeZone.forID("Europe/Madrid"));
+		this.endDate = dtMadrid.toDate();		
+		this.iniDate = dtMadrid.minusHours(2).toDate();
 		
 		// Can't show beyond one day in the past
-		calendar.add(Calendar.HOUR_OF_DAY, -22);
-		this.minDate = calendar.getTime();
+		this.minDate = dtMadrid.minusHours(24).toDate();
 	}
 	
 	private void loadData() {
@@ -263,5 +269,6 @@ public class TTBotWebUI extends UI {
 		}
 		// Set series to chart (discarding previous ones)
 		this.chart.getConfiguration().setSeries(newSeries);
+
 	}
 }

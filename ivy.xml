@@ -47,6 +47,9 @@
 		<!-- postgresql jdbc connector -->
 		<dependency org="postgresql" name="postgresql" rev="9.1-901.jdbc4" conf="default->default" />
 		
+		<!-- joda time -->
+		<dependency org="joda-time" name="joda-time" rev="2.4" conf="default->default" />
+		
 		<!-- junit -->
 		<dependency org="junit" name="junit" rev="4.10" conf="default->default" />
 		
