@@ -8,9 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
-
 import com.vaadin.addon.charts.Chart;
 import com.vaadin.addon.charts.model.AxisType;
 import com.vaadin.addon.charts.model.ChartType;
@@ -35,6 +32,7 @@ import com.vaadin.ui.ListSelect;
 import com.vaadin.ui.PopupDateField;
 import com.vaadin.ui.UI;
 import com.vaadin.ui.VerticalLayout;
+import com.vfa.ttbot.helper.DateTimeHelper;
 import com.vfa.ttbot.helper.ModelHelper;
 import com.vfa.ttbot.model.Trend;
 import com.vfa.ttbot.model.TrendLog;
@@ -192,14 +190,12 @@ public class TTBotWebUI extends UI {
 	}
 
 	private void initDates() {
-		// Work with Madrid local time
-		DateTime dt = new DateTime();
-		DateTime dtMadrid = dt.withZone(DateTimeZone.forID("Europe/Madrid"));
-		this.endDate = dtMadrid.toDate();		
-		this.iniDate = dtMadrid.minusHours(2).toDate();
+		// Init dates for fields
+		this.endDate = DateTimeHelper.getDate();		
+		this.iniDate = DateTimeHelper.getDate(-2);
 		
 		// Can't show beyond one day in the past
-		this.minDate = dtMadrid.minusHours(24).toDate();
+		this.minDate = DateTimeHelper.getDate(-24);
 	}
 	
 	private void loadData() {
