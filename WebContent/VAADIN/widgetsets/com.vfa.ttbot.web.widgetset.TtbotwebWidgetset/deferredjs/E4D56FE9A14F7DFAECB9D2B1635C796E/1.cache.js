@@ -1,1 +1,0 @@
-$wnd.com_vfa_ttbot_web_widgetset_TtbotwebWidgetset.runAsyncCallback1('d9(919,1,Zwd);_.nc=function Q6b(){FXb((!AXb&&(AXb=new GXb),AXb),this.b.e)};Kjd(ai)(1);\n//# sourceURL=com.vfa.ttbot.web.widgetset.TtbotwebWidgetset-1.js\n')
