@@ -48,7 +48,6 @@ public class TTBotWebUI extends UI {
 	private List<Trend> trends;
 	private Map<Date, List<TrendLog>> mapTrendLogs;
 	private ArrayList<Date> dates;
-	private Date minDate;
 	private Date endDate;
 	private Date iniDate;
 	private Chart chart;
@@ -106,23 +105,30 @@ public class TTBotWebUI extends UI {
 		layout.addComponent(formLayout);
 
 		iniDateField = new PopupDateField("Fecha-hora de inicio", this.iniDate);
+		iniDateField.setDescription("Introducir fecha y hora de inicio");
 		iniDateField.setResolution(Resolution.MINUTE);
 		iniDateField.setRequired(true);
 		iniDateField.setRequiredError("Debe especificar la fecha de inicio");
+		iniDateField.setRangeStart(this.getMinDate());
+		iniDateField.setRangeEnd(this.getMaxDate());
 		iniDateField.addValidator(new Validator() {
 			@Override
 			public void validate(Object value) throws InvalidValueException {
 				// Check against min date
-				if (!(value instanceof Date && ((Date)value).after(minDate))) {
-					throw new InvalidValueException("Fecha de inicio fuera de rango: no puede ser anterior a 24 horas ni posterior a la hora actual");
+				if (!(value instanceof Date && ((Date)value).after(getMinDate()))) {
+					throw new InvalidValueException("La fecha de inicio no puede ser anterior a 24 horas");
 				}
 			}			
 		});
 		iniDateField.setImmediate(true);
+		
 		endDateField = new PopupDateField("Fecha-hora de fin", this.endDate);
+		endDateField.setDescription("Introducir fecha y hora de fin");
 		endDateField.setResolution(Resolution.MINUTE);
 		endDateField.setRequired(true);
 		endDateField.setRequiredError("Debe especificar la fecha de fin");
+		endDateField.setRangeStart(this.getMinDate());
+		endDateField.setRangeEnd(this.getMaxDate());
 		endDateField.addValidator(new Validator() {
 			@Override
 			public void validate(Object value) throws InvalidValueException {
@@ -136,6 +142,7 @@ public class TTBotWebUI extends UI {
 		
 		// Select field for filtering trends
 		selectTrends = new ListSelect("Seleccionar TTs");
+		selectTrends.setDescription("Dejar pulsado CTRL para seleccionar varios");
 		selectTrends.setMultiSelect(true);
 		BeanItemContainer<Trend> trendContainer = new BeanItemContainer<Trend>(Trend.class, trends);
 		selectTrends.setContainerDataSource(trendContainer);
@@ -180,6 +187,7 @@ public class TTBotWebUI extends UI {
 			// Retrieve data
 			this.loadData();
 			
+			// Update ListSelect Items
 			BeanItemContainer<Trend> trendContainer = new BeanItemContainer<Trend>(Trend.class, trends);
 			selectTrends.setContainerDataSource(trendContainer);
 		}
@@ -192,12 +200,19 @@ public class TTBotWebUI extends UI {
 	private void initDates() {
 		// Init dates for fields
 		this.endDate = DateTimeHelper.getDate();		
-		this.iniDate = DateTimeHelper.getDate(-2);
-		
-		// Can't show beyond one day in the past
-		this.minDate = DateTimeHelper.getDate(-24);
+		this.iniDate = DateTimeHelper.getDate(-2);		
 	}
 	
+	protected Date getMinDate() {
+		// Can't show beyond one day in the past
+		return DateTimeHelper.getDate(-24);
+	}
+
+	protected Date getMaxDate() {
+		// For disabling dates in the future
+		return DateTimeHelper.getDate(24);
+	}
+
 	private void loadData() {
 		try {
 			// Get all logs from date to date
