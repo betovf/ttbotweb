@@ -50,6 +50,9 @@
 		<!-- joda time -->
 		<dependency org="joda-time" name="joda-time" rev="2.4" conf="default->default" />
 		
+		<!-- commons lang -->
+		<dependency org="org.apache.commons" name="commons-lang3" rev="3.3.2" conf="default->default" />
+		
 		<!-- junit -->
 		<dependency org="junit" name="junit" rev="4.10" conf="default->default" />
 		

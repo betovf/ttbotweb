@@ -9,6 +9,8 @@ import java.util.Map;
 import java.util.Set;
 
 import com.vaadin.addon.charts.Chart;
+import com.vaadin.addon.charts.PointClickEvent;
+import com.vaadin.addon.charts.PointClickListener;
 import com.vaadin.addon.charts.model.AxisType;
 import com.vaadin.addon.charts.model.ChartType;
 import com.vaadin.addon.charts.model.Configuration;
@@ -29,10 +31,12 @@ import com.vaadin.ui.Button;
 import com.vaadin.ui.Button.ClickEvent;
 import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.ListSelect;
+import com.vaadin.ui.Notification;
 import com.vaadin.ui.PopupDateField;
 import com.vaadin.ui.UI;
 import com.vaadin.ui.VerticalLayout;
 import com.vfa.ttbot.helper.DateTimeHelper;
+import com.vfa.ttbot.helper.LinkHelper;
 import com.vfa.ttbot.helper.ModelHelper;
 import com.vfa.ttbot.model.Trend;
 import com.vfa.ttbot.model.TrendLog;
@@ -92,7 +96,27 @@ public class TTBotWebUI extends UI {
 		yaxis.setReversed(true);
 		conf.addyAxis(yaxis);
 		
-		// First time drawing
+	    // Spanish convention for date formatting
+        conf.getTooltip().setxDateFormat("%e/%m/%Y %H:%M");
+
+        // Add click listener to open trend in Twitter 
+        chart.addPointClickListener(new PointClickListener() {            
+            @Override
+            public void onClick(PointClickEvent event) {
+                // Get trend clicked
+            	String trend = event.getSeries().getName();
+            	
+            	// Open twitter in a new browser tab
+                String twitterUrl = LinkHelper.getTwitterUrlForTrend(trend);
+				if (twitterUrl != null) {
+					getUI().getPage().open(twitterUrl, "_blank");
+				} else {
+					Notification.show("Error al construir la URL de búsqueda en Twitter", Notification.Type.ERROR_MESSAGE);
+				}
+            }
+        });
+        
+        // First time drawing
 		this.initDates();
 		this.loadData();		
 		this.populateChart();
