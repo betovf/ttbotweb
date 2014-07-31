@@ -109,9 +109,11 @@ public class TTBotWebUI extends UI {
             	// Open twitter in a new browser tab
                 String twitterUrl = LinkHelper.getTwitterUrlForTrend(trend);
 				if (twitterUrl != null) {
-					getUI().getPage().open(twitterUrl, "_blank");
+					// All following links opened will go to the same window
+					Notification.show("Información", "Se ha abierto una nueva ventana del navegador para mostrar el Trending Topic en Twitter", Notification.Type.TRAY_NOTIFICATION);
+					getUI().getPage().open(twitterUrl, "Twitter");
 				} else {
-					Notification.show("Error al construir la URL de búsqueda en Twitter", Notification.Type.ERROR_MESSAGE);
+					Notification.show("Error", "No se pudo construir la URL de búsqueda en Twitter", Notification.Type.ERROR_MESSAGE);
 				}
             }
         });
