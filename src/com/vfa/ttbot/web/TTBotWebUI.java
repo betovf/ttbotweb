@@ -33,6 +33,7 @@ import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.ListSelect;
 import com.vaadin.ui.Notification;
 import com.vaadin.ui.PopupDateField;
+import com.vaadin.ui.ProgressBar;
 import com.vaadin.ui.UI;
 import com.vaadin.ui.VerticalLayout;
 import com.vfa.ttbot.helper.DateTimeHelper;
@@ -59,6 +60,8 @@ public class TTBotWebUI extends UI {
 	private PopupDateField endDateField;
 	private ListSelect selectTrends;
 	private List<Trend> filteredTrends = new ArrayList<Trend>();
+	private Button button;
+	private ProgressBar loading;
 	
 	@Override
 	protected void init(VaadinRequest request) {
@@ -175,7 +178,7 @@ public class TTBotWebUI extends UI {
 		selectTrends.setItemCaptionMode(ItemCaptionMode.PROPERTY);
 	    selectTrends.setItemCaptionPropertyId("name");
 		
-		Button button = new Button("Enviar");
+		button = new Button("Enviar");
 		button.addClickListener(new Button.ClickListener() {
 		    public void buttonClick(ClickEvent event) {
 		    	// Proceed only if both dates are valid (validators run immediately)
@@ -185,11 +188,18 @@ public class TTBotWebUI extends UI {
 		    }
 		});
 		
+		// Create loading progress bar
+		loading = new ProgressBar();
+		loading.setIndeterminate(true);
+		loading.setVisible(false);
+		
 		formLayout.addComponent(iniDateField);
 		formLayout.addComponent(endDateField);
 		formLayout.addComponent(selectTrends);
 		formLayout.addComponent(button);
 		formLayout.setComponentAlignment(button, Alignment.BOTTOM_CENTER);
+		formLayout.addComponent(loading);
+		formLayout.setComponentAlignment(loading, Alignment.BOTTOM_CENTER);
 		
 	}
 
@@ -209,18 +219,24 @@ public class TTBotWebUI extends UI {
 			filteredTrends.addAll(selected);
 		}
 		 
-		if (!unchanged) {
-			// Retrieve data
-			this.loadData();
+		if (unchanged) {
+			// Reload data in chart directly
+			this.populateChart();		
+			this.chart.drawChart();
+		} else {
+			// Load data in another thread
+			final WorkThread thread = new WorkThread();
+			thread.start();
 			
-			// Update ListSelect Items
-			BeanItemContainer<Trend> trendContainer = new BeanItemContainer<Trend>(Trend.class, trends);
-			selectTrends.setContainerDataSource(trendContainer);
+			// Enable polling and set frequency to 0.5 seconds
+			UI.getCurrent().setPollInterval(500);
+			
+			// Disable the button until the work is done
+			button.setEnabled(false);
+			
+			// Show progress
+			loading.setVisible(true);
 		}
-		// Reload data in chart
-		this.populateChart();
-		
-		this.chart.drawChart();
 	}
 
 	private void initDates() {
@@ -306,6 +322,36 @@ public class TTBotWebUI extends UI {
 		}
 		// Set series to chart (discarding previous ones)
 		this.chart.getConfiguration().setSeries(newSeries);
-
+	}
+	
+	class WorkThread extends Thread {
+		@Override
+		public void run() {
+			// Retrieve data
+			loadData();
+			
+			// Update the UI thread-safely
+			UI.getCurrent().access(new Runnable() {
+				@Override
+				public void run() {
+					// Reload data in chart
+					populateChart();					
+					chart.drawChart();
+					
+					// Update ListSelect Items
+					BeanItemContainer<Trend> trendContainer = new BeanItemContainer<Trend>(Trend.class, trends);
+					selectTrends.setContainerDataSource(trendContainer);
+					
+					// Hide notification
+					loading.setVisible(false);
+					
+					// Enable submit button
+					button.setEnabled(true);
+					
+					// Stop polling
+					UI.getCurrent().setPollInterval(-1);
+				}
+			});
+		}
 	}
 }
