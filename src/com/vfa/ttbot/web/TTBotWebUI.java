@@ -20,7 +20,9 @@ import com.vaadin.addon.charts.model.Series;
 import com.vaadin.addon.charts.model.XAxis;
 import com.vaadin.addon.charts.model.YAxis;
 import com.vaadin.annotations.Theme;
+import com.vaadin.data.Property.ValueChangeListener;
 import com.vaadin.data.Validator;
+import com.vaadin.data.Property.ValueChangeEvent;
 import com.vaadin.data.util.BeanItemContainer;
 import com.vaadin.server.Page;
 import com.vaadin.server.VaadinRequest;
@@ -29,9 +31,11 @@ import com.vaadin.ui.AbstractSelect.ItemCaptionMode;
 import com.vaadin.ui.Alignment;
 import com.vaadin.ui.Button;
 import com.vaadin.ui.Button.ClickEvent;
+import com.vaadin.ui.ComboBox;
 import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.ListSelect;
 import com.vaadin.ui.Notification;
+import com.vaadin.ui.OptionGroup;
 import com.vaadin.ui.PopupDateField;
 import com.vaadin.ui.ProgressBar;
 import com.vaadin.ui.UI;
@@ -62,6 +66,8 @@ public class TTBotWebUI extends UI {
 	private List<Trend> filteredTrends = new ArrayList<Trend>();
 	private Button button;
 	private ProgressBar loading;
+	private ComboBox combomMaxTrends;
+	private int maxTrends;
 	
 	@Override
 	protected void init(VaadinRequest request) {
@@ -169,15 +175,40 @@ public class TTBotWebUI extends UI {
 		});
 		endDateField.setImmediate(true);
 		
+		// Have an option group
+		OptionGroup group = new OptionGroup("Filtrado");
+		group.addItem("Seleccionar");
+		group.addItem("Limitar");
+		group.setValue("Seleccionar");
+		group.addValueChangeListener(new ValueChangeListener() {			
+			@Override
+			public void valueChange(ValueChangeEvent event) {
+				// enable selected
+				String val = (String) event.getProperty().getValue();
+				if("Seleccionar".equalsIgnoreCase(val)) {
+					selectTrends.setEnabled(true);
+					combomMaxTrends.setEnabled(false);
+				} else {
+					selectTrends.setEnabled(false);
+					combomMaxTrends.setEnabled(true);					
+				}
+			}
+		});
+		
 		// Select field for filtering trends
 		selectTrends = new ListSelect("Seleccionar TTs");
 		selectTrends.setDescription("Dejar pulsado CTRL para seleccionar varios");
 		selectTrends.setMultiSelect(true);
-		BeanItemContainer<Trend> trendContainer = new BeanItemContainer<Trend>(Trend.class, trends);
-		selectTrends.setContainerDataSource(trendContainer);
+		populateSelectTrends();
 		selectTrends.setItemCaptionMode(ItemCaptionMode.PROPERTY);
 	    selectTrends.setItemCaptionPropertyId("name");
 		
+	    // Combo box for limiting trends shown
+	    combomMaxTrends = new ComboBox("Máximo número de TTs:");
+	    combomMaxTrends.setDescription("Se mostrarán los TTs con más apariciones primero");
+	    populateComboMaxTrends();
+	    combomMaxTrends.setEnabled(false);
+	    
 		button = new Button("Enviar");
 		button.addClickListener(new Button.ClickListener() {
 		    public void buttonClick(ClickEvent event) {
@@ -195,12 +226,21 @@ public class TTBotWebUI extends UI {
 		
 		formLayout.addComponent(iniDateField);
 		formLayout.addComponent(endDateField);
+		formLayout.addComponent(group);
 		formLayout.addComponent(selectTrends);
+		formLayout.addComponent(combomMaxTrends);
 		formLayout.addComponent(button);
 		formLayout.setComponentAlignment(button, Alignment.BOTTOM_CENTER);
 		formLayout.addComponent(loading);
 		formLayout.setComponentAlignment(loading, Alignment.BOTTOM_CENTER);
 		
+	}
+
+	private void populateComboMaxTrends() {
+		combomMaxTrends.removeAllItems();
+	    for(int i=10; i<this.trends.size();i += 10) {
+	    	combomMaxTrends.addItem(String.valueOf(i));
+	    }
 	}
 
 	protected void refreshChart() {
@@ -218,7 +258,16 @@ public class TTBotWebUI extends UI {
 		if (!selected.isEmpty()) {
 			filteredTrends.addAll(selected);
 		}
-		 
+		
+		// Get possible max number of trends to show
+		String selId = (String) this.combomMaxTrends.getValue();
+		try{
+			this.maxTrends = Integer.valueOf(selId);
+		} catch(NumberFormatException e) {
+			// Default option, show all
+			this.maxTrends = 0;
+		}
+		
 		if (unchanged) {
 			// Reload data in chart directly
 			this.populateChart();		
@@ -297,6 +346,10 @@ public class TTBotWebUI extends UI {
 			targetTrends = this.filteredTrends;
 		}
 		
+		// Check if limited
+		boolean limited = this.maxTrends != 0;
+		int count = 0;
+		
 		// Configure series according to data
 		for (Trend trend : targetTrends) {
 			// Each trend will be a series
@@ -319,11 +372,21 @@ public class TTBotWebUI extends UI {
 			}
 			// Add trend series
 			newSeries.add(series);
+			
+			// Check if limited
+			if (limited && ++count > this.maxTrends) {
+				break;
+			}
 		}
 		// Set series to chart (discarding previous ones)
 		this.chart.getConfiguration().setSeries(newSeries);
 	}
 	
+	private void populateSelectTrends() {
+		BeanItemContainer<Trend> trendContainer = new BeanItemContainer<Trend>(Trend.class, trends);
+		selectTrends.setContainerDataSource(trendContainer);
+	}
+
 	class WorkThread extends Thread {
 		@Override
 		public void run() {
@@ -339,8 +402,10 @@ public class TTBotWebUI extends UI {
 					chart.drawChart();
 					
 					// Update ListSelect Items
-					BeanItemContainer<Trend> trendContainer = new BeanItemContainer<Trend>(Trend.class, trends);
-					selectTrends.setContainerDataSource(trendContainer);
+					populateSelectTrends();
+					
+					// Update max trends combo
+					populateComboMaxTrends();
 					
 					// Hide notification
 					loading.setVisible(false);
