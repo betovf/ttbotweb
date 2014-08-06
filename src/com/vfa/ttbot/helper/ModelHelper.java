@@ -5,9 +5,12 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 import com.vfa.ttbot.model.Trend;
 import com.vfa.ttbot.model.TrendLog;
+import com.vfa.ttbot.model.WeightedTrend;
 import com.vfa.ttbot.service.IDataService;
 
 public class ModelHelper {
@@ -52,13 +55,20 @@ public class ModelHelper {
 		return trends;		
 	}
 	
-	public static Integer[] getArrayPositions(List<TrendLog> trendLogs) {
-		Integer [] positions = new Integer[trendLogs.size()];
-		int count=0;
+	public static List<Trend> getWeightedTrends(List<Trend> trends, Map<Integer, List<TrendLog>> mapTrendLogs) {
+		// Create a TreeSet for ordering trends by weight
+		Set<WeightedTrend> trendsSet = new TreeSet<WeightedTrend>(new WeightedTrendComparator());
 		
-		for (TrendLog log : trendLogs) {
-			positions[count++] = log.getPosition();
+		for (Trend t : trends) {
+			// Its weight will be its number of log appearances
+			int weight = mapTrendLogs.get(t.getId()).size();
+			WeightedTrend wt = new WeightedTrend();
+			wt.setId(t.getId());
+			wt.setName(t.getName());
+			wt.setWeight(weight);
+			trendsSet.add(wt);
 		}
-		return positions;
+		// Create list from set
+		return new ArrayList<Trend>(trendsSet);
 	}
 }

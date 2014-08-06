@@ -2,7 +2,6 @@ package com.vfa.ttbot.web;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -20,9 +19,9 @@ import com.vaadin.addon.charts.model.Series;
 import com.vaadin.addon.charts.model.XAxis;
 import com.vaadin.addon.charts.model.YAxis;
 import com.vaadin.annotations.Theme;
+import com.vaadin.data.Property.ValueChangeEvent;
 import com.vaadin.data.Property.ValueChangeListener;
 import com.vaadin.data.Validator;
-import com.vaadin.data.Property.ValueChangeEvent;
 import com.vaadin.data.util.BeanItemContainer;
 import com.vaadin.server.Page;
 import com.vaadin.server.VaadinRequest;
@@ -43,6 +42,7 @@ import com.vaadin.ui.VerticalLayout;
 import com.vfa.ttbot.helper.DateTimeHelper;
 import com.vfa.ttbot.helper.LinkHelper;
 import com.vfa.ttbot.helper.ModelHelper;
+import com.vfa.ttbot.helper.TrendComparator;
 import com.vfa.ttbot.model.Trend;
 import com.vfa.ttbot.model.TrendLog;
 import com.vfa.ttbot.service.DBDataService;
@@ -70,6 +70,7 @@ public class TTBotWebUI extends UI {
 	private int maxTrends;
 	private boolean filter=true;
 	private boolean limit=false;
+	private List<Trend> weightedTrends;
 	
 	@Override
 	protected void init(VaadinRequest request) {
@@ -263,6 +264,8 @@ public class TTBotWebUI extends UI {
 			if (!selected.isEmpty()) {
 				this.filteredTrends.addAll(selected);
 			}
+		} else {
+			this.selectTrends.setValue(null);
 		}
 		
 		// Get possible max number of trends to show
@@ -274,6 +277,8 @@ public class TTBotWebUI extends UI {
 			} catch (NumberFormatException e) {
 				// Default option, show all
 			}
+		} else {
+			this.combomMaxTrends.setValue(null);
 		}
 		
 		if (unchanged) {
@@ -329,13 +334,10 @@ public class TTBotWebUI extends UI {
 			
 			// Get trends names from id-trend list from previous map
 			this.trends = ModelHelper.getTrends(dataService, new ArrayList<Integer>(mapTrends.keySet()));
-			Collections.sort(this.trends, new Comparator<Trend>() {
-				@Override
-				public int compare(Trend arg0, Trend arg1) {
-					// Compare names
-					return arg0.getName().compareToIgnoreCase(arg1.getName());
-				}				
-			});
+			Collections.sort(this.trends, new TrendComparator());
+			
+			// Get alternative list of trends ordered by weight
+			this.weightedTrends = ModelHelper.getWeightedTrends(trends, mapTrends);
 			
 		} catch (Exception ex) {
 			ex.printStackTrace();
@@ -350,11 +352,14 @@ public class TTBotWebUI extends UI {
 		List<Trend> targetTrends = this.trends;
 		
 		// Check if filtered
-		if (!this.filteredTrends.isEmpty()) {
+		if (filter && !this.filteredTrends.isEmpty()) {
 			targetTrends = this.filteredTrends;
 		}
 		
 		// Check if limited
+		if (limit) {
+			targetTrends = this.weightedTrends;
+		}
 		boolean limited = this.maxTrends != 0;
 		int count = 0;
 		
