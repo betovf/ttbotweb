@@ -68,6 +68,8 @@ public class TTBotWebUI extends UI {
 	private ProgressBar loading;
 	private ComboBox combomMaxTrends;
 	private int maxTrends;
+	private boolean filter=true;
+	private boolean limit=false;
 	
 	@Override
 	protected void init(VaadinRequest request) {
@@ -185,7 +187,9 @@ public class TTBotWebUI extends UI {
 			public void valueChange(ValueChangeEvent event) {
 				// enable selected
 				String val = (String) event.getProperty().getValue();
-				if("Seleccionar".equalsIgnoreCase(val)) {
+				filter = "Seleccionar".equalsIgnoreCase(val);
+				limit = !filter;
+				if(filter) {
 					selectTrends.setEnabled(true);
 					combomMaxTrends.setEnabled(false);
 				} else {
@@ -250,22 +254,26 @@ public class TTBotWebUI extends UI {
 		// Get new dates 
 		this.iniDate = this.iniDateField.getValue();
 		this.endDate = this.endDateField.getValue();
-		
+
 		// Get possible trends filtered
-		@SuppressWarnings("unchecked")
-		Set<Trend> selected = (Set<Trend>) this.selectTrends.getValue();
-		filteredTrends.clear();
-		if (!selected.isEmpty()) {
-			filteredTrends.addAll(selected);
+		this.filteredTrends.clear();
+		if (filter) {
+			@SuppressWarnings("unchecked")
+			Set<Trend> selected = (Set<Trend>) this.selectTrends.getValue();
+			if (!selected.isEmpty()) {
+				this.filteredTrends.addAll(selected);
+			}
 		}
 		
 		// Get possible max number of trends to show
-		String selId = (String) this.combomMaxTrends.getValue();
-		try{
-			this.maxTrends = Integer.valueOf(selId);
-		} catch(NumberFormatException e) {
-			// Default option, show all
-			this.maxTrends = 0;
+		this.maxTrends = 0;
+		if (limit) {
+			String selId = (String) this.combomMaxTrends.getValue();
+			try {
+				this.maxTrends = Integer.valueOf(selId);
+			} catch (NumberFormatException e) {
+				// Default option, show all
+			}
 		}
 		
 		if (unchanged) {
@@ -281,10 +289,10 @@ public class TTBotWebUI extends UI {
 			UI.getCurrent().setPollInterval(500);
 			
 			// Disable the button until the work is done
-			button.setEnabled(false);
+			this.button.setEnabled(false);
 			
 			// Show progress
-			loading.setVisible(true);
+			this.loading.setVisible(true);
 		}
 	}
 
