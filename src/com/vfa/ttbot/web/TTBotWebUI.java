@@ -180,22 +180,26 @@ public class TTBotWebUI extends UI {
 		
 		// Have an option group
 		OptionGroup group = new OptionGroup("Filtrado");
+		group.addItem("Ninguno");
 		group.addItem("Seleccionar");
 		group.addItem("Limitar");
-		group.setValue("Seleccionar");
+		group.setValue("Ninguno");
 		group.addValueChangeListener(new ValueChangeListener() {			
 			@Override
 			public void valueChange(ValueChangeEvent event) {
 				// enable selected
 				String val = (String) event.getProperty().getValue();
 				filter = "Seleccionar".equalsIgnoreCase(val);
-				limit = !filter;
-				if(filter) {
+				limit = "Limitar".equalsIgnoreCase(val);
+				if (filter) {
 					selectTrends.setEnabled(true);
-					combomMaxTrends.setEnabled(false);
-				} else {
+					combomMaxTrends.setEnabled(false);					
+				} else if (limit){
 					selectTrends.setEnabled(false);
 					combomMaxTrends.setEnabled(true);					
+				} else {
+					selectTrends.setEnabled(false);
+					combomMaxTrends.setEnabled(false);					
 				}
 			}
 		});
@@ -207,6 +211,7 @@ public class TTBotWebUI extends UI {
 		populateSelectTrends();
 		selectTrends.setItemCaptionMode(ItemCaptionMode.PROPERTY);
 	    selectTrends.setItemCaptionPropertyId("name");
+	    selectTrends.setEnabled(false);
 		
 	    // Combo box for limiting trends shown
 	    combomMaxTrends = new ComboBox("Máximo número de TTs:");
