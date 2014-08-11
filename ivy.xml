@@ -52,6 +52,9 @@
 		
 		<!-- commons lang -->
 		<dependency org="org.apache.commons" name="commons-lang3" rev="3.3.2" conf="default->default" />
+	
+		<!-- google guava -->
+		<dependency org="com.google.guava" name="guava" rev="17.0" conf="default->default" />	
 		
 		<!-- junit -->
 		<dependency org="junit" name="junit" rev="4.10" conf="default->default" />

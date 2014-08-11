@@ -2,12 +2,12 @@ package com.vfa.ttbot.helper;
 
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ListMultimap;
 import com.vfa.ttbot.model.Trend;
 import com.vfa.ttbot.model.TrendLog;
 import com.vfa.ttbot.model.WeightedTrend;
@@ -15,31 +15,23 @@ import com.vfa.ttbot.service.IDataService;
 
 public class ModelHelper {
 
-	public static Map<Integer, List<TrendLog>> groupTrendLogsByTrend(List<TrendLog> trendLogs) {
-		Map<Integer, List<TrendLog>> map = new HashMap<Integer, List<TrendLog>>();
+	public static ListMultimap<Integer,TrendLog> groupTrendLogsByTrend(List<TrendLog> trendLogs) {
+		ListMultimap<Integer, TrendLog> map = ArrayListMultimap.create();
 		
 		for (TrendLog log : trendLogs) {
-			List<TrendLog> list = map.get(log.getIdTrend());
-			if (list == null) {
-				list = new ArrayList<TrendLog>();
-				map.put(log.getIdTrend(), list);
-			}
-			list.add(log);
+			// Just add the log for that trend id
+			map.put(log.getIdTrend(), log);
 		}
 		
 		return map;
 	}
 	
-	public static Map<Date, List<TrendLog>> groupTrendLogsByDateTime(List<TrendLog> trendLogs) {
-		Map<Date, List<TrendLog>> map = new HashMap<Date, List<TrendLog>>();
+	public static ListMultimap<Date,TrendLog> groupTrendLogsByDateTime(List<TrendLog> trendLogs) {
+		ListMultimap<Date, TrendLog> map = ArrayListMultimap.create();
 		
 		for (TrendLog log : trendLogs) {
-			List<TrendLog> list = map.get(log.getDateTime());
-			if (list == null) {
-				list = new ArrayList<TrendLog>(10);
-				map.put(log.getDateTime(), list);
-			}
-			list.add(log);
+			// Just add the log for that date
+			map.put(log.getDateTime(), log);
 		}
 		
 		return map;
@@ -55,13 +47,13 @@ public class ModelHelper {
 		return trends;		
 	}
 	
-	public static List<Trend> getWeightedTrends(List<Trend> trends, Map<Integer, List<TrendLog>> mapTrendLogs) {
+	public static List<Trend> getWeightedTrends(List<Trend> trends, ListMultimap<Integer,TrendLog> mapTrends) {
 		// Create a TreeSet for ordering trends by weight
 		Set<WeightedTrend> trendsSet = new TreeSet<WeightedTrend>(new WeightedTrendComparator());
 		
 		for (Trend t : trends) {
 			// Its weight will be its number of log appearances
-			int weight = mapTrendLogs.get(t.getId()).size();
+			int weight = mapTrends.get(t.getId()).size();
 			WeightedTrend wt = new WeightedTrend();
 			wt.setId(t.getId());
 			wt.setName(t.getName());

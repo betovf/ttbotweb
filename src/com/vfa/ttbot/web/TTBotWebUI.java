@@ -5,10 +5,10 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.Set;
 
+import com.google.common.collect.ListMultimap;
 import com.vaadin.addon.charts.Chart;
 import com.vaadin.addon.charts.PointClickEvent;
 import com.vaadin.addon.charts.PointClickListener;
@@ -57,7 +57,7 @@ public class TTBotWebUI extends UI {
 	private static IDataService dataService = new DBDataService();
 	private List<TrendLog> trendLogs;
 	private List<Trend> trends;
-	private Map<Date, List<TrendLog>> mapTrendLogs;
+	private ListMultimap<Date,TrendLog> mapTrendLogs;
 	private ArrayList<Date> dates;
 	private Date endDate;
 	private Date iniDate;
@@ -341,7 +341,7 @@ public class TTBotWebUI extends UI {
 			Collections.sort(this.dates);
 			
 			// Group log also by trend
-			Map<Integer, List<TrendLog>> mapTrends = ModelHelper.groupTrendLogsByTrend(this.trendLogs);
+			ListMultimap<Integer,TrendLog> mapTrends = ModelHelper.groupTrendLogsByTrend(this.trendLogs);
 			
 			// Get trends names from id-trend list from previous map
 			this.trends = ModelHelper.getTrends(dataService, new ArrayList<Integer>(mapTrends.keySet()));
