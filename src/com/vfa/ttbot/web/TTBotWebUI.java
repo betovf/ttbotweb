@@ -4,7 +4,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.ResourceBundle;
 import java.util.Set;
 
 import com.vaadin.addon.charts.Chart;
@@ -77,6 +79,10 @@ public class TTBotWebUI extends UI {
 		// Page title
 		Page.getCurrent().setTitle("TTBot.es");
 
+		// Resource bundle for internationalized messages	
+		Locale locale = request.getLocale();
+		final ResourceBundle bundle = ResourceBundle.getBundle("Messages", locale);
+		
 		// Main layout
 		final VerticalLayout layout = new VerticalLayout();
 		layout.setMargin(true);
@@ -90,18 +96,18 @@ public class TTBotWebUI extends UI {
 		        
 		// Modify configuration
 		Configuration conf = chart.getConfiguration();
-		conf.setTitle("TTBot.es");
-		conf.setSubTitle("Evolución de Trending Topics en España");
+		conf.setTitle(bundle.getString("title"));
+		conf.setSubTitle(bundle.getString("subtitle"));
 		
 		// Set the X axis to handle date-time
 		XAxis xaxis = new XAxis();
 		xaxis.setType(AxisType.DATETIME);
-		xaxis.setTitle("Fecha-Hora");
+		xaxis.setTitle(bundle.getString("dateTime"));
 		conf.addxAxis(xaxis);
 
 		// Set the Y axis to show positions from 1 to 10 
 		YAxis yaxis = new YAxis();
-		yaxis.setTitle("Posición");
+		yaxis.setTitle(bundle.getString("position"));
 		yaxis.setTickInterval(1);
 		yaxis.setMin(1);
 		yaxis.setMax(10);
@@ -122,10 +128,10 @@ public class TTBotWebUI extends UI {
                 String twitterUrl = LinkHelper.getTwitterUrlForTrend(trend);
 				if (twitterUrl != null) {
 					// All following links opened will go to the same window
-					Notification.show("Información", "Se ha abierto una nueva ventana del navegador para mostrar el Trending Topic en Twitter", Notification.Type.TRAY_NOTIFICATION);
+					Notification.show(bundle.getString("information"), bundle.getString("newBrowserWindow"), Notification.Type.TRAY_NOTIFICATION);
 					getUI().getPage().open(twitterUrl, "Twitter");
 				} else {
-					Notification.show("Error", "No se pudo construir la URL de búsqueda en Twitter", Notification.Type.ERROR_MESSAGE);
+					Notification.show(bundle.getString("error"), bundle.getString("urlError"), Notification.Type.ERROR_MESSAGE);
 				}
             }
         });
@@ -142,11 +148,11 @@ public class TTBotWebUI extends UI {
 		formLayout.setSpacing(true);
 		layout.addComponent(formLayout);
 
-		iniDateField = new PopupDateField("Fecha-hora de inicio", this.iniDate);
-		iniDateField.setDescription("Introducir fecha y hora de inicio");
+		iniDateField = new PopupDateField(bundle.getString("initialDateTime"), this.iniDate);
+		iniDateField.setDescription(bundle.getString("iniDateDesc"));
 		iniDateField.setResolution(Resolution.MINUTE);
 		iniDateField.setRequired(true);
-		iniDateField.setRequiredError("Debe especificar la fecha de inicio");
+		iniDateField.setRequiredError(bundle.getString("iniDateRequiredError"));
 		iniDateField.setRangeStart(this.getMinDate());
 		iniDateField.setRangeEnd(this.getMaxDate());
 		iniDateField.addValidator(new Validator() {
@@ -154,17 +160,17 @@ public class TTBotWebUI extends UI {
 			public void validate(Object value) throws InvalidValueException {
 				// Check against min date
 				if (!(value instanceof Date && ((Date)value).after(getMinDate()))) {
-					throw new InvalidValueException("La fecha de inicio no puede ser anterior a 24 horas");
+					throw new InvalidValueException(bundle.getString("iniDateInvalidMessage"));
 				}
 			}			
 		});
 		iniDateField.setImmediate(true);
 		
-		endDateField = new PopupDateField("Fecha-hora de fin", this.endDate);
-		endDateField.setDescription("Introducir fecha y hora de fin");
+		endDateField = new PopupDateField(bundle.getString("endDateTime"), this.endDate);
+		endDateField.setDescription(bundle.getString("endDateDesc"));
 		endDateField.setResolution(Resolution.MINUTE);
 		endDateField.setRequired(true);
-		endDateField.setRequiredError("Debe especificar la fecha de fin");
+		endDateField.setRequiredError(bundle.getString("endDateRequiredError"));
 		endDateField.setRangeStart(this.getMinDate());
 		endDateField.setRangeEnd(this.getMaxDate());
 		endDateField.addValidator(new Validator() {
@@ -172,25 +178,25 @@ public class TTBotWebUI extends UI {
 			public void validate(Object value) throws InvalidValueException {
 				// Check against initial date
 				if (!(value instanceof Date && ((Date)value).after(iniDateField.getValue()))) {
-					throw new InvalidValueException("La fecha de fin tiene que ser posterior a la de inicio");
+					throw new InvalidValueException(bundle.getString("endDateInvalidMessage"));
 				}
 			}			
 		});
 		endDateField.setImmediate(true);
 		
 		// Have an option group
-		OptionGroup group = new OptionGroup("Filtrado");
-		group.addItem("Ninguno");
-		group.addItem("Seleccionar");
-		group.addItem("Limitar");
-		group.setValue("Ninguno");
+		OptionGroup group = new OptionGroup(bundle.getString("filterGroup"));
+		group.addItem(bundle.getString("none"));
+		group.addItem(bundle.getString("select"));
+		group.addItem(bundle.getString("limit"));
+		group.setValue(bundle.getString("none"));
 		group.addValueChangeListener(new ValueChangeListener() {			
 			@Override
 			public void valueChange(ValueChangeEvent event) {
 				// enable selected
 				String val = (String) event.getProperty().getValue();
-				filter = "Seleccionar".equalsIgnoreCase(val);
-				limit = "Limitar".equalsIgnoreCase(val);
+				filter = bundle.getString("select").equalsIgnoreCase(val);
+				limit = bundle.getString("limit").equalsIgnoreCase(val);
 				if (filter) {
 					selectTrends.setEnabled(true);
 					combomMaxTrends.setEnabled(false);					
@@ -205,8 +211,8 @@ public class TTBotWebUI extends UI {
 		});
 		
 		// Select field for filtering trends
-		selectTrends = new ListSelect("Seleccionar TTs");
-		selectTrends.setDescription("Dejar pulsado CTRL para seleccionar varios");
+		selectTrends = new ListSelect(bundle.getString("selectTrends"));
+		selectTrends.setDescription(bundle.getString("selectTrendsDesc"));
 		selectTrends.setMultiSelect(true);
 		populateSelectTrends();
 		selectTrends.setItemCaptionMode(ItemCaptionMode.PROPERTY);
@@ -214,12 +220,12 @@ public class TTBotWebUI extends UI {
 	    selectTrends.setEnabled(false);
 		
 	    // Combo box for limiting trends shown
-	    combomMaxTrends = new ComboBox("Máximo número de TTs:");
-	    combomMaxTrends.setDescription("Se mostrarán los TTs con más apariciones primero");
+	    combomMaxTrends = new ComboBox(bundle.getString("maxTrends"));
+	    combomMaxTrends.setDescription(bundle.getString("maxTrendsDesc"));
 	    populateComboMaxTrends();
 	    combomMaxTrends.setEnabled(false);
 	    
-		button = new Button("Enviar");
+		button = new Button(bundle.getString("submit"));
 		button.addClickListener(new Button.ClickListener() {
 		    public void buttonClick(ClickEvent event) {
 		    	// Proceed only if both dates are valid (validators run immediately)
