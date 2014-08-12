@@ -186,6 +186,20 @@ public class TTBotWebUI extends UI {
 		});
 		endDateField.setImmediate(true);
 		
+		// Button for setting current time in end date field
+		Button nowButton = new Button(bundle.getString("setNow"));
+		nowButton.addClickListener(new Button.ClickListener() {
+		    public void buttonClick(ClickEvent event) {
+		    	// Set value of end date field
+				endDateField.setValue(DateTimeHelper.getDate());
+		    }
+		});
+		
+		// Create vertical layout to pack both end date field and now button together
+		VerticalLayout endDateLayout = new VerticalLayout();
+		endDateLayout.addComponent(endDateField);
+		endDateLayout.addComponent(nowButton);
+		
 		// Have an option group
 		OptionGroup group = new OptionGroup(bundle.getString("filterGroup"));
 		group.addItem(bundle.getString("none"));
@@ -243,7 +257,7 @@ public class TTBotWebUI extends UI {
 		loading.setVisible(false);
 		
 		formLayout.addComponent(iniDateField);
-		formLayout.addComponent(endDateField);
+		formLayout.addComponent(endDateLayout);
 		formLayout.addComponent(group);
 		formLayout.addComponent(selectTrends);
 		formLayout.addComponent(combomMaxTrends);
