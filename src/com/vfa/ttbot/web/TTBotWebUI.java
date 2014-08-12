@@ -114,10 +114,12 @@ public class TTBotWebUI extends UI {
 		yaxis.setReversed(true);
 		conf.addyAxis(yaxis);
 		
-	    // Spanish convention for date formatting
-        conf.getTooltip().setxDateFormat("%e/%m/%Y %H:%M");
-
-        // Add click listener to open trend in Twitter 
+	    if ("es".equalsIgnoreCase(locale.getLanguage())) {
+			// Spanish convention for date formatting
+			conf.getTooltip().setxDateFormat("%e/%m/%Y %H:%M");
+		}
+	    
+		// Add click listener to open trend in Twitter 
         chart.addPointClickListener(new PointClickListener() {            
             @Override
             public void onClick(PointClickEvent event) {
