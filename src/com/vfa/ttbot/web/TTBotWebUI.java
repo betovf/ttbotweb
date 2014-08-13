@@ -195,7 +195,7 @@ public class TTBotWebUI extends UI {
 		    }
 		});
 		
-		// Create vertical layout to pack both end date field and now button together
+		// Create vertical layout to pack end date field and now button together
 		VerticalLayout endDateLayout = new VerticalLayout();
 		endDateLayout.addComponent(endDateField);
 		endDateLayout.addComponent(nowButton);
@@ -256,15 +256,20 @@ public class TTBotWebUI extends UI {
 		loading.setIndeterminate(true);
 		loading.setVisible(false);
 		
+		// Create horizontal layout to pack combo, submit button and progress bar together
+		HorizontalLayout hLayout = new HorizontalLayout();
+		hLayout.setSpacing(true);
+		hLayout.addComponent(combomMaxTrends);
+		hLayout.addComponent(button);
+		hLayout.setComponentAlignment(button, Alignment.BOTTOM_CENTER);
+		hLayout.addComponent(loading);
+		hLayout.setComponentAlignment(loading, Alignment.BOTTOM_CENTER);
+
 		formLayout.addComponent(iniDateField);
 		formLayout.addComponent(endDateLayout);
 		formLayout.addComponent(group);
 		formLayout.addComponent(selectTrends);
-		formLayout.addComponent(combomMaxTrends);
-		formLayout.addComponent(button);
-		formLayout.setComponentAlignment(button, Alignment.BOTTOM_CENTER);
-		formLayout.addComponent(loading);
-		formLayout.setComponentAlignment(loading, Alignment.BOTTOM_CENTER);
+		formLayout.addComponent(hLayout);
 		
 	}
 
