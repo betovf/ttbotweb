@@ -58,6 +58,7 @@ public class TTBotWebUI extends UI {
 	private List<TrendLog> trendLogs;
 	private List<Trend> trends;
 	private ListMultimap<Date,TrendLog> mapTrendLogs;
+	private ListMultimap<Integer,TrendLog> mapTrends;
 	private ArrayList<Date> dates;
 	private Date endDate;
 	private Date iniDate;
@@ -368,6 +369,9 @@ public class TTBotWebUI extends UI {
 			this.trends = ModelHelper.getTrends(dataService, new ArrayList<Integer>(mapTrends.keySet()));
 			Collections.sort(this.trends, new TrendComparator());
 			
+			// Get the final map matching trends vs dates
+			this.mapTrends = ModelHelper.groupTrendLogsByTrendAndDate(this.mapTrendLogs, this.dates, this.trends);
+			
 			// Get alternative list of trends ordered by weight
 			this.weightedTrends = ModelHelper.getWeightedTrends(trends, mapTrends);
 			
@@ -400,19 +404,10 @@ public class TTBotWebUI extends UI {
 			// Each trend will be a series
 			DataSeries series = new DataSeries(trend.getName());
 			
-			// Loop over all possible date-times
-			for (Date date : this.dates) {
-				// Loop over all log positions
-				List<TrendLog> logs = this.mapTrendLogs.get(date);
-				Integer pos = null;
-				for (TrendLog log : logs) {
-					// Search a match to current trend
-					if (log.getIdTrend().equals(trend.getId())) {
-						pos = log.getPosition();
-					}
-				}
-				// pos might be null if current trend did no appear in the top ten that time
-				DataSeriesItem item = new DataSeriesItem(date,pos);
+			// Loop over its log entries
+			for (TrendLog log : this.mapTrends.get(trend.getId())) {
+				// Create data item
+				DataSeriesItem item = new DataSeriesItem(log.getDateTime(), log.getPosition());
 				series.add(item);
 			}
 			// Add trend series
