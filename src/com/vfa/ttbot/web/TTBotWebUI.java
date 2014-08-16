@@ -366,7 +366,7 @@ public class TTBotWebUI extends UI {
 			ListMultimap<Integer,TrendLog> mapTrends = ModelHelper.groupTrendLogsByTrend(this.trendLogs);
 			
 			// Get trends names from id-trend list from previous map
-			this.trends = ModelHelper.getTrends(dataService, new ArrayList<Integer>(mapTrends.keySet()));
+			this.trends = dataService.getTrends(new ArrayList<Integer>(mapTrends.keySet()));
 			Collections.sort(this.trends, new TrendComparator());
 			
 			// Get the final map matching trends vs dates

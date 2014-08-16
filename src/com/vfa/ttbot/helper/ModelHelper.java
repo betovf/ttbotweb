@@ -67,16 +67,6 @@ public class ModelHelper {
 		return map;
 	}
 	
-	public static List<Trend> getTrends(IDataService service, List<Integer> ids) {		
-		List<Trend> trends = new ArrayList<Trend>();
-		
-		for (Integer id : ids) {
-			trends.add(service.getTrend(id));
-		}
-		
-		return trends;		
-	}
-	
 	public static List<Trend> getWeightedTrends(List<Trend> trends, ListMultimap<Integer,TrendLog> mapTrends) {
 		// Create a TreeSet for ordering trends by weight
 		Set<WeightedTrend> trendsSet = new TreeSet<WeightedTrend>(new WeightedTrendComparator());

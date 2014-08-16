@@ -2,6 +2,7 @@ package com.vfa.ttbot.service;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -31,7 +32,6 @@ public class DBDataService implements IDataService {
 		}
 	}
 	
-
 	@Override
 	public List<TrendLog> getTrendLogsByDate(Date ini, Date end) {
 		SqlSession session = sqlSessionFactory.openSession();
@@ -69,4 +69,14 @@ public class DBDataService implements IDataService {
 		return trend;
 	}
 
+	public List<Trend> getTrends(List<Integer> ids) {		
+		List<Trend> trends = new ArrayList<Trend>();
+		
+		for (Integer id : ids) {
+			trends.add(this.getTrend(id));
+		}
+		
+		return trends;		
+	}
+	
 }
