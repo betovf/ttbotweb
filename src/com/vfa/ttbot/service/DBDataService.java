@@ -34,7 +34,7 @@ public class DBDataService implements IDataService {
 	}
 	
 	@Override
-	public List<TrendLog> getTrendLogsByDate(Date ini, Date end) {
+	public List<TrendLog> getTrendLogsByDate(Date ini, Date end) throws Exception {
 		SqlSession session = sqlSessionFactory.openSession();
 
 		List<TrendLog> listTrendLogs = null;
@@ -45,6 +45,7 @@ public class DBDataService implements IDataService {
 		} catch (Exception e) {
 			// 
 			e.printStackTrace();
+			throw e;
 		} finally {
 			session.close();
 		}	
@@ -52,7 +53,7 @@ public class DBDataService implements IDataService {
 	}
 
 	@Override
-	public Trend getTrend(int id) {
+	public Trend getTrend(int id) throws Exception {
 		SqlSession session = sqlSessionFactory.openSession();
 		
 		Trend trend = null;
@@ -63,6 +64,7 @@ public class DBDataService implements IDataService {
 		} catch (Exception e) {
 			// 
 			e.printStackTrace();
+			throw e;
 		} finally {
 			session.close();
 		}	
@@ -70,7 +72,7 @@ public class DBDataService implements IDataService {
 		return trend;
 	}
 
-	public List<Trend> getTrends(Iterable<Integer> ids) {		
+	public List<Trend> getTrends(Iterable<Integer> ids) throws Exception {		
 		List<Trend> trends = new ArrayList<Trend>();
 		
 		for (Integer id : ids) {

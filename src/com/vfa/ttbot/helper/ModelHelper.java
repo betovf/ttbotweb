@@ -11,7 +11,6 @@ import com.google.common.collect.ListMultimap;
 import com.vfa.ttbot.model.Trend;
 import com.vfa.ttbot.model.TrendLog;
 import com.vfa.ttbot.model.WeightedTrend;
-import com.vfa.ttbot.service.IDataService;
 
 public class ModelHelper {
 

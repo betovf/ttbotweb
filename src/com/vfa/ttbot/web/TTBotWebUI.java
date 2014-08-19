@@ -74,6 +74,8 @@ public class TTBotWebUI extends UI {
 	private boolean filter=true;
 	private boolean limit=false;
 	private List<Trend> weightedTrends;
+	private boolean dataError;
+	private Notification dataErrorNotif;
 	
 	@Override
 	protected void init(VaadinRequest request) {
@@ -139,17 +141,14 @@ public class TTBotWebUI extends UI {
             }
         });
         
-        // First time drawing
-		this.initDates();
-		this.loadData();		
-		this.populateChart();
-		
 		layout.addComponent(chart);
 		
 		// Form fields
 		HorizontalLayout formLayout = new HorizontalLayout();
 		formLayout.setSpacing(true);
 		layout.addComponent(formLayout);
+
+		this.initDates();
 
 		iniDateField = new PopupDateField(bundle.getString("initialDateTime"), this.iniDate);
 		iniDateField.setDescription(bundle.getString("iniDateDesc"));
@@ -231,7 +230,6 @@ public class TTBotWebUI extends UI {
 		selectTrends = new ListSelect(bundle.getString("selectTrends"));
 		selectTrends.setDescription(bundle.getString("selectTrendsDesc"));
 		selectTrends.setMultiSelect(true);
-		populateSelectTrends();
 		selectTrends.setItemCaptionMode(ItemCaptionMode.PROPERTY);
 	    selectTrends.setItemCaptionPropertyId("name");
 	    selectTrends.setEnabled(false);
@@ -239,7 +237,6 @@ public class TTBotWebUI extends UI {
 	    // Combo box for limiting trends shown
 	    combomMaxTrends = new ComboBox(bundle.getString("maxTrends"));
 	    combomMaxTrends.setDescription(bundle.getString("maxTrendsDesc"));
-	    populateComboMaxTrends();
 	    combomMaxTrends.setEnabled(false);
 	    
 		button = new Button(bundle.getString("submit"));
@@ -271,6 +268,15 @@ public class TTBotWebUI extends UI {
 		formLayout.addComponent(group);
 		formLayout.addComponent(selectTrends);
 		formLayout.addComponent(hLayout);
+		
+		// Create notification for data error
+		this.dataErrorNotif = new Notification(bundle.getString("error"), bundle.getString("dataError"), Notification.Type.ERROR_MESSAGE);
+		
+        // First time drawing
+		this.loadData();		
+		this.populateChart();
+		this.populateSelectTrends();
+		this.populateComboMaxTrends();
 		
 	}
 
@@ -351,36 +357,51 @@ public class TTBotWebUI extends UI {
 	}
 
 	private void loadData() {
+		// Set error flag to false
+		this.dataError = false;
+		
 		try {
 			// Get all logs from date to date
 			this.trendLogs = dataService.getTrendLogsByDate(this.iniDate, this.endDate);
+		} catch (Exception ex) {
+			this.dataError = true;
+			this.trendLogs = new ArrayList<TrendLog>();
+		}
 		
-			// Group those logs by date-time
-			this.mapTrendLogs = ModelHelper.groupTrendLogsByDateTime(this.trendLogs);
+		// Group those logs by date-time
+		this.mapTrendLogs = ModelHelper.groupTrendLogsByDateTime(this.trendLogs);
+		
+		// Get list of dates from previous map
+		this.dates = new ArrayList<Date>(this.mapTrendLogs.keySet());
+		Collections.sort(this.dates);
+		
+		// Group log also by trend
+		ListMultimap<Integer,TrendLog> mapTrends = ModelHelper.groupTrendLogsByTrend(this.trendLogs);
 			
-			// Get list of dates from previous map
-			this.dates = new ArrayList<Date>(this.mapTrendLogs.keySet());
-			Collections.sort(this.dates);
-			
-			// Group log also by trend
-			ListMultimap<Integer,TrendLog> mapTrends = ModelHelper.groupTrendLogsByTrend(this.trendLogs);
-			
+		try {
 			// Get trends names from id-trend list from previous map
 			this.trends = dataService.getTrends(mapTrends.keySet());
-			Collections.sort(this.trends, new TrendComparator());
-			
-			// Get the final map matching trends vs dates
-			this.mapTrends = ModelHelper.groupTrendLogsByTrendAndDate(this.mapTrendLogs, this.dates, this.trends);
-			
-			// Get alternative list of trends ordered by weight
-			this.weightedTrends = ModelHelper.getWeightedTrends(trends, mapTrends);
-			
 		} catch (Exception ex) {
-			ex.printStackTrace();
+			this.dataError = true;
+			this.trends = new ArrayList<Trend>();
 		}
+		Collections.sort(this.trends, new TrendComparator());
+		
+		// Get the final map matching trends vs dates
+		this.mapTrends = ModelHelper.groupTrendLogsByTrendAndDate(this.mapTrendLogs, this.dates, this.trends);
+		
+		// Get alternative list of trends ordered by weight
+		this.weightedTrends = ModelHelper.getWeightedTrends(trends, mapTrends);
+			
 	}
 
 	private void populateChart() {
+		// Check for possible data error
+		if (this.dataError) {
+			this.dataErrorNotif.show(Page.getCurrent());
+			return;
+		}
+		
 		// New series
 		List<Series> newSeries = new ArrayList<Series>();
 		
