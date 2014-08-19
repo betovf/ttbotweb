@@ -2,6 +2,7 @@ package com.vfa.ttbot.service;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.lang.Iterable;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -69,7 +70,7 @@ public class DBDataService implements IDataService {
 		return trend;
 	}
 
-	public List<Trend> getTrends(List<Integer> ids) {		
+	public List<Trend> getTrends(Iterable<Integer> ids) {		
 		List<Trend> trends = new ArrayList<Trend>();
 		
 		for (Integer id : ids) {
