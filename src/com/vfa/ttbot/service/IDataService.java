@@ -1,5 +1,6 @@
 package com.vfa.ttbot.service;
 
+import java.lang.Iterable;
 import java.util.Date;
 import java.util.List;
 
@@ -12,5 +13,5 @@ public interface IDataService {
 	
 	public Trend getTrend(int id);
 	
-	public List<Trend> getTrends(List<Integer> ids);
+	public List<Trend> getTrends(Iterable<Integer> ids);
 }
