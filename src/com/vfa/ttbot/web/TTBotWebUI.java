@@ -7,6 +7,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.Set;
+import java.util.TimeZone;
+
+import org.joda.time.DateTime;
 
 import com.google.common.collect.ListMultimap;
 import com.vaadin.annotations.Theme;
@@ -38,7 +41,7 @@ import com.vfa.ttbot.model.TrendLog;
 import com.vfa.ttbot.service.DBDataService;
 import com.vfa.ttbot.service.IDataService;
 import com.vfa.ttbot.web.view.IChartWrapper;
-import com.vfa.ttbot.web.view.VaadinChartWrapper;
+import com.vfa.ttbot.web.view.JFreeChartTrendsWrapper;
 
 @SuppressWarnings("serial")
 @Theme("ttbotweb")
@@ -66,6 +69,7 @@ public class TTBotWebUI extends UI {
 	private List<Trend> weightedTrends;
 	private boolean dataError;
 	private Notification dataErrorNotif;
+	private VerticalLayout layout;
 	
 	@Override
 	protected void init(VaadinRequest request) {
@@ -76,14 +80,17 @@ public class TTBotWebUI extends UI {
 		Locale locale = request.getLocale();
 		final ResourceBundle bundle = ResourceBundle.getBundle("Messages", locale);
 		
+		// TODO get user's timezone
+		TimeZone timezone = TimeZone.getTimeZone("Europe/Madrid");
+		
 		// Main layout
-		final VerticalLayout layout = new VerticalLayout();
+		layout = new VerticalLayout();
 		layout.setMargin(true);
 		layout.setSpacing(true);
 		setContent(layout);
 
 		// Chart
-		chart = new VaadinChartWrapper(bundle, locale);
+		chart = new JFreeChartTrendsWrapper(bundle, locale);//new VaadinChartWrapper(bundle, locale);//
         
 		layout.addComponent(chart.getChart());
 		
@@ -95,6 +102,7 @@ public class TTBotWebUI extends UI {
 		this.initDates();
 
 		iniDateField = new PopupDateField(bundle.getString("initialDateTime"), this.iniDate);
+		iniDateField.setTimeZone(timezone);
 		iniDateField.setDescription(bundle.getString("iniDateDesc"));
 		iniDateField.setResolution(Resolution.MINUTE);
 		iniDateField.setRequired(true);
@@ -113,6 +121,7 @@ public class TTBotWebUI extends UI {
 		iniDateField.setImmediate(true);
 		
 		endDateField = new PopupDateField(bundle.getString("endDateTime"), this.endDate);
+		endDateField.setTimeZone(timezone);
 		endDateField.setDescription(bundle.getString("endDateDesc"));
 		endDateField.setResolution(Resolution.MINUTE);
 		endDateField.setRequired(true);
@@ -216,12 +225,15 @@ public class TTBotWebUI extends UI {
 		// Create notification for data error
 		this.dataErrorNotif = new Notification(bundle.getString("error"), bundle.getString("dataError"), Notification.Type.ERROR_MESSAGE);
 		
-        // First time drawing
+		layout.removeComponent(this.chart.getChart());
+
+		// First time drawing
 		this.loadData();		
 		this.populateChart();
 		this.populateSelectTrends();
 		this.populateComboMaxTrends();
 		
+		layout.addComponent(this.chart.getChart(), 0);
 	}
 
 	private void populateComboMaxTrends() {
@@ -358,8 +370,12 @@ public class TTBotWebUI extends UI {
 			targetTrends = this.weightedTrends;
 		}
 		
+		layout.removeComponent(this.chart.getChart());
+		
 		// populate chart
 		this.chart.populate(targetTrends, mapTrends, maxTrends);
+		
+		layout.addComponent(this.chart.getChart(), 0);
 	}
 	
 	private void populateSelectTrends() {

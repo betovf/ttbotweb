@@ -56,6 +56,9 @@
 		<!-- google guava -->
 		<dependency org="com.google.guava" name="guava" rev="17.0" conf="default->default" />	
 		
+		<!-- wrapper add-on for jfreecharts -->
+		<dependency org="org.vaadin.addon" name="jfreechartwrapper" rev="3.0.1" conf="default->default" />	
+		
 		<!-- junit -->
 		<dependency org="junit" name="junit" rev="4.10" conf="default->default" />
 		
